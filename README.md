@@ -1,1 +1,1 @@
-![Build Status](https://github.com/jrouwe/TestRepo/actions/workflows/cmake.yml/badge.svg)
+![Build Status](https://github.com/jrouwe/TestRepo/actions/workflows/build.yml/badge.svg)
