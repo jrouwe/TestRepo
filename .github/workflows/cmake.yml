@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  linux:
+  Linux:
     runs-on: ubuntu-latest
     strategy:
         matrix:

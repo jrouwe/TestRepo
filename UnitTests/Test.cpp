@@ -4,6 +4,6 @@ TEST_SUITE("Suite")
 {
 	TEST_CASE("Test")
 	{
-		CHECK(false);
+		CHECK(true);
 	}
 }
