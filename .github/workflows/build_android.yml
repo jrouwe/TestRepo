@@ -1,4 +1,4 @@
-name: Build
+name: Android
 
 on:
   push:
@@ -26,4 +26,4 @@ jobs:
       uses: actions/checkout@v2
     - name: Gradle Build
       working-directory: ${{github.workspace}}/Build/Android
-      run: ./gradlew build
+      run: ls && ./gradlew build
