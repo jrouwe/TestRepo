@@ -6,10 +6,13 @@ TEST_SUITE("Suite")
 {
 	TEST_CASE("Test")
 	{
-#if defined(__x86_64__) || defined(_M_X64)
-		FAIL_CHECK("x64");
-#elif defined(__aarch64__) || defined(_M_ARM64)
-		MESSAGE("arm64");
+#if __clang_major__ == 10
+#warning 10
+#elif __clang_major__ == 11
+#warning 11
+#elif __clang_major__ == 12
+#warning 12
 #endif
+		CHECK(true);
 	}
 }
