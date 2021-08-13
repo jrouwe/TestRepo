@@ -23,5 +23,5 @@ jobs:
       run: cmake --build ${{github.workspace}}/Build/Linux_${{env.BUILD_TYPE}} --config ${{env.BUILD_TYPE}}
     - name: Test
       working-directory: ${{github.workspace}}/Build/Linux_${{env.BUILD_TYPE}}
-      run: ctest -C ${{env.BUILD_TYPE}}
+      run: make CTEST_OUTPUT_ON_FAILURE=1 test
   
