@@ -12,7 +12,8 @@ jobs:
     name: Linux
     strategy:
         matrix:
-            build_type: [Debug, Release, Distribution, ReleaseASAN, ReleaseUBSAN]
+            #build_type: [Debug, Release, Distribution, ReleaseASAN, ReleaseUBSAN]
+            build_type:[]
 
     steps:
     - uses: actions/checkout@v2
@@ -30,7 +31,8 @@ jobs:
     name: Visual Studio CL
     strategy:
         matrix:
-            build_type: [Debug, Release, Distribution]
+            build_type: [Debug]
+            #, Release, Distribution]
 
     steps:
     - uses: actions/checkout@v2
@@ -42,4 +44,5 @@ jobs:
       run: msbuild Build\VS2019_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}}
     - name: Test
       working-directory: ${{github.workspace}}/Build/VS2019_CL/${{matrix.build_type}}
-      run: ctest --output-on-failure
+      run: dir
+      run: UnitTests.exe
