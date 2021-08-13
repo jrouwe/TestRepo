@@ -7,8 +7,9 @@ on:
     branches: [ master ]
 
 jobs:
-  Linux:
+  linux:
     runs-on: ubuntu-latest
+    name: Linux
     strategy:
         matrix:
             build_type: [Debug, Release, Distribution, ReleaseASAN, ReleaseUBSAN]
@@ -23,4 +24,21 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}/Build/Linux_${{matrix.build_type}}
       run: make CTEST_OUTPUT_ON_FAILURE=1 test
-  
+
+  msvc_cl:
+    runs-on: windows-latest
+    name: Visual Studio CL
+    strategy:
+        matrix:
+            build_type: [Debug, Release, Distribution]
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/Build/VS2019_CL -G "Visual Studio 16 2019" -A x64 Build
+    - name: Build
+      run: msbuild Build\VS2019_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}}
+    - name: Test
+      working-directory: ${{github.workspace}}/Build/VS2019_CL/${{matrix.build_type}}
+      run: UnitTests.exe

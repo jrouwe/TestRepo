@@ -2,7 +2,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT
 #define DOCTEST_CONFIG_NO_WINDOWS_SEH
 
-#include "doctest.h"
+#include "UnitTestFramework.h"
 
 using namespace doctest;
 
