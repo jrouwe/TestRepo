@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Linux
     strategy:
+        fail-fast: false
         matrix:
             build_type: [Debug, Release, Distribution, ReleaseASAN, ReleaseUBSAN]
 
@@ -29,6 +30,7 @@ jobs:
     runs-on: windows-latest
     name: Visual Studio CL
     strategy:
+        fail-fast: false
         matrix:
             build_type: [Debug, Release, Distribution]
 
