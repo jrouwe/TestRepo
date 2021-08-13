@@ -13,7 +13,7 @@ jobs:
     strategy:
         matrix:
             #build_type: [Debug, Release, Distribution, ReleaseASAN, ReleaseUBSAN]
-            build_type:[]
+            build_type: [Debug]
 
     steps:
     - uses: actions/checkout@v2
@@ -44,5 +44,4 @@ jobs:
       run: msbuild Build\VS2019_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}}
     - name: Test
       working-directory: ${{github.workspace}}/Build/VS2019_CL/${{matrix.build_type}}
-      run: dir
-      run: UnitTests.exe
+      run: dir && UnitTests.exe
