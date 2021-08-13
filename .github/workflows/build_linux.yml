@@ -22,13 +22,13 @@ jobs:
         fail-fast: false
         matrix:
             build_type: [Debug]
-            clang_version: [10, 11, 12]
+            clang_version: [clang++-10, clang++-11, clang++-12]
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/Linux_${{matrix.build_type}}_${{matrix.clang_version}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang_version}} Build
+      run: cmake -B ${{github.workspace}}/Build/Linux_${{matrix.build_type}}_${{matrix.clang_version}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_CXX_COMPILER=${{matrix.clang_version}} Build
     - name: Build
       run: cmake --build ${{github.workspace}}/Build/Linux_${{matrix.build_type}}_${{matrix.clang_version}} --config ${{matrix.build_type}}
     - name: Test
