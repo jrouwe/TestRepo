@@ -22,8 +22,9 @@ jobs:
         shell: cmd
         run: OpenCppCoverage.exe --export_type cobertura:CoverageReport.xml -- ./UnitTests.exe
       - name: Upload Report to Codecov
+        working-directory: ${{github.workspace}}/Build/VS2019_CL/Debug
         uses: codecov/codecov-action@v1.3.2
         with:
-          files: ${{github.workspace}}/Build/VS2019_CL/Debug/CoverageReport.xml
+          files: CoverageReport.xml
           fail_ci_if_error: true
           functionalities: fix
