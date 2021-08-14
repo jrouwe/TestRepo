@@ -1,0 +1,29 @@
+name: Upload CodeCov Report
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: windows-latest
+    name: Build, Test, Upload Code Coverage Report
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/Build/VS2019_CL -G "Visual Studio 16 2019" -A x64 Build
+      - name: Build
+        run: msbuild Build\VS2019_CL\JoltPhysics.sln /property:Configuration=Debug
+      - name: Setup OpenCppCoverage and add to PATh
+        run: |
+          choco install OpenCppCoverage -y
+          echo "C:\Program Files\OpenCppCoverage" >> $env:GITHUB_PATH
+      - name: Generate Report
+        working-directory: ${{github.workspace}}/Build/VS2019_CL/Debug
+        shell: cmd
+        run: OpenCppCoverage.exe --sources CoverageReport --export_type cobertura:CoverageReport.xml -- ./UnitTests.exe
+      - name: Upload Report to Codecov
+        uses: codecov/codecov-action@v1.3.2
+        with:
+          files: ./CoverageReport.xml
+          fail_ci_if_error: true
+          functionalities: fix
