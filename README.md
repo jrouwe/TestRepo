@@ -2,7 +2,6 @@
 
 
 [![Ragdoll Pile](https://img.youtube.com/vi/pwyCW0yNKMA/hqdefault.jpg)](https://www.youtube.com/watch?v=pwyCW0yNKMA)
-
-![Ragdoll Pile](http://www.youtube.com/watch?v=pwyCW0yNKMA)
+A YouTube video showing a ragdoll pile simulated with Jolt Physics.
 
 Test edit
