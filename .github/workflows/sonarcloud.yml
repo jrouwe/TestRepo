@@ -38,8 +38,10 @@ jobs:
           echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
       - name: Install llvm
         run: |
-          sudo apt-get install llvm
+          sudo apt-get install llvm-11
+          echo clang version:
           clang --version
+          echo llvm version:
           llvm-cov --version
       - name: Run build-wrapper
         run: |
