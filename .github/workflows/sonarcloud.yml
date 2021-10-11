@@ -38,7 +38,7 @@ jobs:
           echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
       - name: Install llvm
         run: |
-          apt-get install llvm
+          sudo apt-get install llvm
       - name: Run build-wrapper
         run: |
           cd ${{github.workspace}}/Build
