@@ -13,6 +13,7 @@ jobs:
       SONAR_SCANNER_VERSION: 4.4.0.2170
       SONAR_SERVER_URL: "https://sonarcloud.io"
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+      CLANG_VERSION: 12
     steps:
       - uses: actions/checkout@v2
         with:
@@ -39,7 +40,7 @@ jobs:
       - name: Configure CMake
         run: |
             cd ${{github.workspace}}/Build/
-            ./cmake_linux_clang.sh ReleaseCoverage clang++-12
+            ./cmake_linux_clang.sh ReleaseCoverage clang++-${{ env.CLANG_VERSION }}
       - name: Run build-wrapper
         run: |
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build ${{github.workspace}}/Build/Linux_ReleaseCoverage
@@ -47,8 +48,8 @@ jobs:
         run: |
           cd ${{github.workspace}}/Build/Linux_ReleaseCoverage/
           cmake --build . --target test
-          llvm-profdata-12 merge -sparse default.profraw -o default.profdata
-          llvm-cov-12 show -format=text UnitTests -instr-profile=default.profdata > coverage.txt
+          llvm-profdata-${{ env.CLANG_VERSION }} merge -sparse default.profraw -o default.profdata
+          llvm-cov-${{ env.CLANG_VERSION }} show -format=text UnitTests -instr-profile=default.profdata > coverage.txt
           cat coverage.txt
       - name: Run sonar-scanner
         env:
