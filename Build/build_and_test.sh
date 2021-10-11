@@ -1,4 +1,5 @@
 ./cmake_linux_clang.sh ReleaseCoverage
-cd Linux_ReleaseCoverage
-make
-make CTEST_OUTPUT_ON_FAILURE=1 test
+cmake --build Linux_ReleaseCoverage
+cmake --build Linux_ReleaseCoverage --target test
+llvm-profdata merge -sparse Linux_ReleaseCoverage/default.profraw -o Linux_ReleaseCoverage/default.profdata
+llvm-cov show -format=text Linux_ReleaseCoverage/UnitTests -instr-profile=Linux_ReleaseCoverage/default.profdata > coverage.txt
