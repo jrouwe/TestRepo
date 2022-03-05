@@ -22,7 +22,7 @@ jobs:
         fail-fast: false
         matrix:
             build_type: [Debug]
-            clang_version: [clang]
+            clang_version: [clang++]
 
     steps:
     - name: Checkout Code
