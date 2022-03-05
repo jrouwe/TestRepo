@@ -13,6 +13,9 @@
 	#pragma warning (pop)
 #elif defined(JPH_PLATFORM_LINUX) || defined(JPH_PLATFORM_ANDROID)
 	#include <fstream>
+#elif defined(JPH_PLATFORM_MACOS) || defined(JPH_PLATFORM_IOS)
+	#include <mach/mach.h>
+	#include <mach/mach_time.h>
 #endif
 
 namespace JPH {
@@ -74,7 +77,9 @@ static const uint64 sProcessorTicksPerSecond = []() {
 	//JPH_ASSERT(false);
     return uint64(0);
 #elif defined(JPH_PLATFORM_MACOS) || defined(JPH_PLATFORM_IOS)
-    return 0;
+	mach_timebase_info_data_t time_base_info;
+	mach_timebase_info(&time_base_info);
+	return uint64((double)time_base_info.denom / (double)time_base_info.numer * 1.0e9);
 #else
 	#error Undefined
 #endif
