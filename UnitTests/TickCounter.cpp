@@ -80,7 +80,7 @@ static const uint64 sProcessorTicksPerSecond = []() {
 	int mib[2];
     mib[0] = CTL_HW;
     mib[1] = HW_CPU_FREQ;
-    unsigned int freq;
+    uint64 freq = 1;
     size_t len = sizeof(freq);
     sysctl(mib, 2, &freq, &len, nullptr, 0);
 	return freq;
