@@ -6,6 +6,8 @@
 #include <TickCounter.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
 
 using namespace std;
 using namespace JPH;
@@ -27,6 +29,15 @@ TEST_SUITE("Suite")
 		mach_timebase_info(&time_base_info);
 		cout << "denom = " << time_base_info.denom << "\n";
 		cout << "numer = " << time_base_info.numer << "\n";
+
+		int mib[2];
+        mib[0] = CTL_HW;
+        mib[1] = HW_CPU_FREQ;
+        unsigned int freq;
+        size_t len = sizeof(freq);
+        sysctl(mib, 2, &freq, &len, nullptr, 0);
+
+		cout << "freq = " << freq << "\n";
 
 		CHECK(true);
 	}
