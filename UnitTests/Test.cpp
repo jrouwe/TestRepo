@@ -25,15 +25,10 @@ TEST_SUITE("Suite")
 		cout << "ticks_per_sec = " << ticks_per_sec << "\n";
 		cout << "seconds = " << double(ticks_per_sec) / double(duration) << "\n";
 
-		mach_timebase_info_data_t time_base_info;
-		mach_timebase_info(&time_base_info);
-		cout << "denom = " << time_base_info.denom << "\n";
-		cout << "numer = " << time_base_info.numer << "\n";
-
 		int mib[2];
         mib[0] = CTL_HW;
         mib[1] = HW_CPU_FREQ;
-        unsigned int freq;
+        uint64 freq;
         size_t len = sizeof(freq);
         sysctl(mib, 2, &freq, &len, nullptr, 0);
 

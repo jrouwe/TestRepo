@@ -14,8 +14,8 @@
 #elif defined(JPH_PLATFORM_LINUX) || defined(JPH_PLATFORM_ANDROID)
 	#include <fstream>
 #elif defined(JPH_PLATFORM_MACOS) || defined(JPH_PLATFORM_IOS)
-	#include <mach/mach.h>
-	#include <mach/mach_time.h>
+	#include <sys/types.h>
+	#include <sys/sysctl.h>
 #endif
 
 namespace JPH {
@@ -77,9 +77,13 @@ static const uint64 sProcessorTicksPerSecond = []() {
 	//JPH_ASSERT(false);
     return uint64(0);
 #elif defined(JPH_PLATFORM_MACOS) || defined(JPH_PLATFORM_IOS)
-	mach_timebase_info_data_t time_base_info;
-	mach_timebase_info(&time_base_info);
-	return uint64((double)time_base_info.denom / (double)time_base_info.numer * 1.0e9);
+	int mib[2];
+    mib[0] = CTL_HW;
+    mib[1] = HW_CPU_FREQ;
+    unsigned int freq;
+    size_t len = sizeof(freq);
+    sysctl(mib, 2, &freq, &len, nullptr, 0);
+	return freq;
 #else
 	#error Undefined
 #endif
