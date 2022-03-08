@@ -20,7 +20,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v2
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}_${{matrix.clang_version}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_CXX_COMPILER=${{matrix.clang_version}} Build
+      run: cmake -B ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}_${{matrix.clang_version}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_CXX_COMPILER=${{matrix.clang_version}} -DUSE_AVX2=OFF Build
     - name: Build
       run: cmake --build ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}_${{matrix.clang_version}} --config ${{matrix.build_type}}
     - name: Test
