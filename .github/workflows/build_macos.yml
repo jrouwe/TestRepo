@@ -33,5 +33,5 @@ jobs:
       run: cmake --build ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}_${{matrix.clang_version}} --config ${{matrix.build_type}}
     - name: Test
       working-directory: ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}_${{matrix.clang_version}}
-      ./UnitTests
+      run: ./UnitTests
 #      run: ctest --output-on-failure
