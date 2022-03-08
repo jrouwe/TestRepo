@@ -19,6 +19,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2
+    - name: CPU
+      run: sysctl -n machdep.cpu.brand_string
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}_${{matrix.clang_version}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_CXX_COMPILER=${{matrix.clang_version}} -DUSE_AVX2=OFF Build
     - name: Build
