@@ -1,5 +1,5 @@
 root = true
 
-[*.{cpp,h,inl}]
+[*.{cpp,h,inl,cmake},CMakeList.txt]
 indent_style = tab
 tab_width = 4
