@@ -1,0 +1,34 @@
+name: Determinism Check
+
+env:
+    EXPECTED_HASH: 1234
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - 'Docs/**'
+      - '**.md'
+      - '**.txt'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - 'Docs/**'
+      - '**.md'
+      - '**.txt'
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    name: Linux
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/Build/Linux_Distribution -DCMAKE_BUILD_TYPE=Distribution Build -DCROSS_PLATFORM_DETERMINISTIC=ON -DTARGET_VIEWER=OFF -DTARGET_SAMPLES=OFF -DTARGET_HELLO_WORLD=OFF -DTARGET_UNIT_TESTS=OFF
+    - name: Build
+      run: cmake --build ${{github.workspace}}/Build/Linux_Distribution --config Distribution
+    - name: Test
+      working-directory: ${{github.workspace}}/Build/Linux_Distribution
+      run: ./PerformanceTest -hash=${EXPECTED_HASH}
