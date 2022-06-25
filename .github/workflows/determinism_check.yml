@@ -33,4 +33,4 @@ jobs:
       run: msbuild Build\VS2022_CL\JoltPhysics.sln /property:Configuration=Distribution
     - name: Test ConvexVsMesh
       working-directory: ${{github.workspace}}/Build/VS2022_CL/Distribution
-      run: ./PerformanceTest -q=Discrete -t=2 -s=ConvexVsMesh -validate_hash=$env:EXPECTED_HASH
+      run: ./PerformanceTest -q=Discrete -t=2 -s=ConvexVsMesh -validate_hash=$env:EXPECTED_HASH $env:EXPECTED_HASH
