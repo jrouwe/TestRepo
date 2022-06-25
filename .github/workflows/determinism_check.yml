@@ -24,4 +24,4 @@ jobs:
 
     steps:
     - name: Test ConvexVsMesh
-      run: echo ./PerformanceTest -q=Discrete -t=2 -s=ConvexVsMesh -validate_hash=$EXPECTED_HASH $env:EXPECTED_HASH $EXPECTED_HASH %EXPECTED_HASH %EXPECTED_HASH%
+      run: echo ./PerformanceTest -q=Discrete -t=2 -s=ConvexVsMesh -validate_hash=$($EXPECTED_HASH)
