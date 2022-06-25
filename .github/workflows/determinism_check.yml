@@ -1,7 +1,7 @@
 name: Determinism Check
 
 env:
-    EXPECTED_HASH: 1234
+    EXPECTED_HASH: 12345
 
 on:
   push:
