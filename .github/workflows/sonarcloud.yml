@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     name: Build
+    if: ${{ secrets.SONAR_TOKENX }}
     runs-on: ubuntu-latest
     env:
       SONAR_SCANNER_VERSION: 4.4.0.2170
