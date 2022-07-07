@@ -17,6 +17,7 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKENX }}
     steps:
       - uses: actions/checkout@v2
+        if: ${{ env.SONAR_TOKEN }}
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Set up JDK 11
@@ -59,9 +60,9 @@ jobs:
           llvm-cov-${{ env.CLANG_VERSION }} show -format=text UnitTests -instr-profile=default.profdata > coverage.txt
           cat coverage.txt
       - name: Run sonar-scanner
-        if: ${{ env.SONAR_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: ${{ env.SONAR_TOKEN }}
         run: |
           sonar-scanner --define sonar.host.url="${{ env.SONAR_SERVER_URL }}" --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" --define sonar.cfamily.llvm-cov.reportPath="${{github.workspace}}/Build/Linux_ReleaseCoverage/coverage.txt"
