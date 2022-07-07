@@ -35,8 +35,8 @@ jobs:
             apt-get update
             apt-get install clang cmake -y
           env: |
-            CONVEX_VS_MESH_HASH: ${{ env.CONVEX_VS_MESH_HASH }}
-            RAGDOLL_HASH: ${{ env.RAGDOLL_HASH }}
+            CONVEX_VS_MESH_HASH: '${{ env.CONVEX_VS_MESH_HASH }}'
+            RAGDOLL_HASH: '${{ env.RAGDOLL_HASH }}'
 
           run: |
             echo "Configure cmake"
