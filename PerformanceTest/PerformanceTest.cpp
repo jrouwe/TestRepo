@@ -3,6 +3,7 @@
 
 // STL includes
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 
@@ -17,8 +18,9 @@ int main(int argc, char** argv)
 		if (strncmp(arg, "-hash=", 6) == 0)
 		{
 			hash = arg + 6;
+			cout << "Hash: " << hash << endl;
 		}
 	}
 
-	return hash != nullptr && strcmp(hash, "1234") == 0? 0 : 1;
+	return hash != nullptr && (strcmp(hash, "0x485e1d8e739a3c9d") == 0 || strcmp(hash, "0xc29b4c0ea4cf1876") == 0)? 0 : 1;
 }
