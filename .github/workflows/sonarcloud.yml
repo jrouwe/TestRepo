@@ -6,9 +6,22 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run test
-        run: echo ${{ github.actor }}
+    check-secret:
+      runs-on: ubuntu-latest
+      outputs:
+        my-key: ${{ steps.my-key.outputs.defined }}
+      steps:
+          - id: my-key
+            if: ${{ env.MY_KEY != '' }}
+            run: echo "::set-output name=defined::true"
+            env:
+                MY_KEY: ${{ secrets.SONAR_KEY }}
+
+    build:
+        name: Build
+        needs: [check-secret]
+        if: needs.check-secret.outputs.my-key == 'true'
+        runs-on: ubuntu-latest
+        steps:
+          - name: Run test
+            run: echo ${{ github.actor }}
