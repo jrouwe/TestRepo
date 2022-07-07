@@ -33,6 +33,8 @@ jobs:
           import_github_env: true
 
           run: |
+            sudo apt-get update
+            sudo apt-get install clang cmake -y
             cmake -B ${{github.workspace}}/Build/Linux_Distribution -DCMAKE_BUILD_TYPE=Distribution Build -DCROSS_PLATFORM_DETERMINISTIC=ON -DTARGET_VIEWER=OFF -DTARGET_SAMPLES=OFF -DTARGET_HELLO_WORLD=OFF -DTARGET_UNIT_TESTS=OFF
             cmake --build ./Build/Linux_Distribution
             cd ./Build/Linux_Distribution
