@@ -46,6 +46,6 @@ jobs:
             echo "cd"
             cd ./Build/Linux_Distribution
             echo "ConvexVsMesh"
-            ./PerformanceTest -q=LinearCast -t=2 -s=ConvexVsMesh -validate_hash=${CONVEX_VS_MESH_HASH}
+            echo ./PerformanceTest -q=LinearCast -t=2 -s=ConvexVsMesh -validate_hash=${CONVEX_VS_MESH_HASH}
             echo "Ragdoll"
-            ./PerformanceTest -q=LinearCast -t=2 -s=Ragdoll -validate_hash=${RAGDOLL_HASH}
+            echo ./PerformanceTest -q=LinearCast -t=2 -s=Ragdoll -validate_hash=${RAGDOLL_HASH}
