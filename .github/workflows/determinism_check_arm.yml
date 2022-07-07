@@ -30,7 +30,10 @@ jobs:
         with:
           arch: aarch64
           distro: ubuntu_latest
-          import_github_env: true
+          githubToken: ${{ github.token }}
+          env: |
+            CONVEX_VS_MESH_HASH: ${{ CONVEX_VS_MESH_HASH }}
+            RAGDOLL_HASH: ${{ RAGDOLL_HASH }}
 
           run: |
             sudo apt-get update
