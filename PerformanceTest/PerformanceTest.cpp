@@ -4,6 +4,7 @@
 // STL includes
 #include <cstring>
 #include <iostream>
+#include <arm_neon.h>
 
 using namespace std;
 
@@ -31,6 +32,11 @@ int main(int argc, char** argv)
 #else
 	cout << "Running on x86" << endl;
 #endif
+
+	float f[] = { 1, 2, 3, 4 };
+	float32x4_t v = vld1q_f32(f);
+	float v2 = vaddvq_f32(v);
+	cout << v2 << endl;
 	
 	return 0;
 }
