@@ -15,7 +15,7 @@ jobs:
             if: ${{ env.MY_KEY != '' }}
             run: echo "::set-output name=defined::true"
             env:
-                MY_KEY: ${{ secrets.SONAR_KEY }}
+                MY_KEY: ${{ secrets.SONAR_TOKEN }}
 
     build:
         name: Build
