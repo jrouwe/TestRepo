@@ -1,0 +1,17 @@
+on: [push, pull_request]
+
+jobs:
+  check_determinism:
+    runs-on: ubuntu-latest
+    name: Check Determinism ARM
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: aarch64
+          distro: ubuntu_latest
+
+          run: |
+            lscpu
