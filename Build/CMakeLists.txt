@@ -12,6 +12,9 @@ option(TARGET_VIEWER "Build JoltViewer" ON)
 # When turning this option on, the library will be compiled in such a way to attempt to keep the simulation deterministic across platforms
 option(CROSS_PLATFORM_DETERMINISTIC "Cross platform deterministic" OFF)
 
+# When turning this option on, the library will be compiled for ARM (aarch64-linux-gnu)
+option(CROSS_COMPILE_ARM "Cross compile to aarch64-linux-gnu" OFF)
+
 # Select X86 processor features to use (if everything is off it will be SSE2 compatible)
 option(USE_SSE4_1 "Enable SSE4.1" ON)
 option(USE_SSE4_2 "Enable SSE4.2" ON)
@@ -137,7 +140,40 @@ elseif ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQU
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-model=precise -ffp-contract=off")
 	endif()
 
-	set(CMAKE_CXX_FLAGS "--target=aarch64-linux-gnu ${CMAKE_CXX_FLAGS}")
+	# Platform specific compiler flags
+	if (CROSS_COMPILE_ARM)
+		set(CMAKE_CXX_FLAGS "--target=aarch64-linux-gnu ${CMAKE_CXX_FLAGS}")
+	elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
+		# X64
+		if (USE_AVX512)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mavx512vl -mavx512dq -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c")
+		elseif (USE_AVX2)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c")
+		elseif (USE_AVX)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -mpopcnt")
+		elseif (USE_SSE4_2)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -mpopcnt")
+		elseif (USE_SSE4_1)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+		else()
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
+		endif()
+		if (USE_LZCNT)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mlzcnt")
+		endif()
+		if (USE_TZCNT)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi")
+		endif()
+		if (USE_F16C)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mf16c")
+		endif()
+		if (USE_FMADD AND NOT CROSS_PLATFORM_DETERMINISTIC)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfma")
+		endif()
+	elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
+		# ARM64
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	endif()
 
 	# Set compiler flags for various configurations
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -161,11 +197,20 @@ set(CMAKE_EXE_LINKER_FLAGS_DISTRIBUTION "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 # Set repository root
 set(PHYSICS_REPO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../)
 
+# Make Jolt Library
+include(${PHYSICS_REPO_ROOT}/Jolt/Jolt.cmake)
+if (IOS)
+	# Ensure that we enable SSE4.2 for the x86_64 build, CMAKE_SYSTEM_PROCESSOR is not set for iOS
+	set_property(TARGET Jolt PROPERTY XCODE_ATTRIBUTE_OTHER_CPLUSPLUSFLAGS[arch=x86_64] "$(inherited) -msse4.2 -mpopcnt") 
+endif()
+
 if (TARGET_UNIT_TESTS)
     # Create UnitTests executable
     include(${PHYSICS_REPO_ROOT}/UnitTests/UnitTests.cmake)
     add_executable(UnitTests ${UNIT_TESTS_SRC_FILES})
     target_include_directories(UnitTests PUBLIC ${UNIT_TESTS_ROOT})
+    target_link_libraries(UnitTests LINK_PUBLIC Jolt)
+	target_precompile_headers(UnitTests PRIVATE ${JOLT_PHYSICS_ROOT}/Jolt.h)
     if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         target_link_options(UnitTests PUBLIC "/SUBSYSTEM:CONSOLE")
     endif()
@@ -185,14 +230,42 @@ if (TARGET_UNIT_TESTS)
 endif()
 
 if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+	if (TARGET_HELLO_WORLD)
+		# Example 'Hello World' application
+		include(${PHYSICS_REPO_ROOT}/HelloWorld/HelloWorld.cmake)
+		add_executable(HelloWorld ${HELLO_WORLD_SRC_FILES})
+		target_include_directories(HelloWorld PUBLIC ${HELLO_WORLD_ROOT})
+		target_link_libraries(HelloWorld LINK_PUBLIC Jolt)
+		if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+			target_link_options(HelloWorld PUBLIC "/SUBSYSTEM:CONSOLE")
+		endif()
+	endif()
+
 	if (TARGET_PERFORMANCE_TEST)
 		# Performance Test application
 		include(${PHYSICS_REPO_ROOT}/PerformanceTest/PerformanceTest.cmake)
 		add_executable(PerformanceTest ${PERFORMANCE_TEST_SRC_FILES})
 		target_include_directories(PerformanceTest PUBLIC ${PERFORMANCE_TEST_ROOT})
+		target_link_libraries(PerformanceTest LINK_PUBLIC Jolt)
 		if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 			target_link_options(PerformanceTest PUBLIC "/SUBSYSTEM:CONSOLE")
 		endif()
 		set_property(TARGET PerformanceTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${PHYSICS_REPO_ROOT}")
+		
+		# Copy the assets folder
+		add_custom_command(TARGET PerformanceTest PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PHYSICS_REPO_ROOT}/Assets/ $<TARGET_FILE_DIR:PerformanceTest>/Assets/)
+	   endif()
+endif()
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+	# Windows only targets
+	if (TARGET_SAMPLES OR TARGET_VIEWER)
+		include(${PHYSICS_REPO_ROOT}/TestFramework/TestFramework.cmake)
+	endif()
+	if (TARGET_SAMPLES)
+		include(${PHYSICS_REPO_ROOT}/Samples/Samples.cmake)
+	endif()
+	if (TARGET_VIEWER)
+		include(${PHYSICS_REPO_ROOT}/JoltViewer/JoltViewer.cmake)
 	endif()
 endif()
