@@ -26,7 +26,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v2
     - name: Install cross compiler
-      run: sudo apt-get install gcc-11-aarch64-linux-gnu gcc-11-multilib g++-11-multilib libstdc++-11-dev-arm64-cross -y
+      run: sudo apt-get install gcc-9-aarch64-linux-gnu gcc-9-multilib g++-9-multilib libstdc++-9-dev-arm64-cross -y
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/Build/Linux_Distribution -DCMAKE_BUILD_TYPE=Distribution -DCMAKE_CXX_COMPILER=clang++ Build -DCROSS_PLATFORM_DETERMINISTIC=ON -DTARGET_VIEWER=OFF -DTARGET_SAMPLES=OFF -DTARGET_HELLO_WORLD=OFF -DTARGET_UNIT_TESTS=ON
     - name: Build
