@@ -6,7 +6,7 @@ on:
 
 # Deploys the examples
 jobs:
-  build:
+  deploy-examples:
     runs-on: ubuntu-latest
 
     steps:
