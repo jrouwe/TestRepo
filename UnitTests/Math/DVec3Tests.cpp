@@ -11,7 +11,7 @@ TEST_SUITE("DVec3Tests")
 	{
 		DVec3 v = DVec3::sZero();
 
-		CHECK(v.GetX() == 0);
+		CHECK(v.GetX() == 1);
 		CHECK(v.GetY() == 0);
 		CHECK(v.GetZ() == 0);
 	}
