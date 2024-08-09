@@ -216,7 +216,7 @@ endif()
 target_include_directories(Jolt PUBLIC
 	$<BUILD_INTERFACE:${PHYSICS_REPO_ROOT}>
 	$<INSTALL_INTERFACE:include/>)
-target_precompile_headers(Jolt PRIVATE ${JOLT_PHYSICS_ROOT}/Jolt.h)
+target_precompile_headers(Jolt PRIVATE "$<$<CONFIG:Debug,Release,Distribution,ReleaseASAN,ReleaseUBSAN>:${JOLT_PHYSICS_ROOT}/Jolt.h>")
 
 # Set the debug/non-debug build flags
 target_compile_definitions(Jolt PUBLIC "$<$<CONFIG:Debug>:_DEBUG>")
