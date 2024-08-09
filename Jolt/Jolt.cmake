@@ -343,8 +343,6 @@ else()
 			# Note that this does not require the browser to actually support SSE 4.2 it merely means that it can translate those instructions to WASM SIMD instructions
 			target_compile_options(Jolt PUBLIC -msimd128 -msse4.2)
 		endif()
-		target_compile_options(Jolt PUBLIC -pthread)
-		target_link_options(Jolt PUBLIC -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=67108864)
 	elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i386")
 		# x86 and x86_64
 		# On 32-bit builds we need to default to using SSE instructions, the x87 FPU instructions have higher intermediate precision
@@ -383,4 +381,15 @@ else()
 
 		EMIT_X86_INSTRUCTION_SET_DEFINITIONS()
 	endif()
+endif()
+
+# On Unix flavors we need the pthread library
+if (NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows") AND NOT EMSCRIPTEN)
+	target_compile_options(Jolt PUBLIC -pthread)
+endif()
+
+if (EMSCRIPTEN)
+	# We need more than the default 64KB stack and 16MB memory
+	# Also disable warning: running limited binaryen optimizations because DWARF info requested (or indirectly required)
+	target_link_options(Jolt PUBLIC -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=134217728 -Wno-limited-postlink-optimizations)
 endif()

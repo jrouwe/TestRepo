@@ -83,6 +83,9 @@ option(USE_STD_VECTOR "Use std::vector instead of own Array class" OFF)
 # Setting this option will compile the ObjectStream class and RTTI attribute information
 option(ENABLE_OBJECT_STREAM "Compile the ObjectStream class and RTTI attribute information" ON)
 
+# Enable installation
+option(ENABLE_INSTALL "Generate installation target"  ON)
+
 include(CMakeDependentOption)
 
 # Ability to toggle between the static and DLL versions of the MSVC runtime library
@@ -185,16 +188,16 @@ else()
 		if (CMAKE_CXX_COMPILER_VERSION LESS 14 OR CROSS_PLATFORM_DETERMINISTIC)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
 		endif()
+
+		# Cross compiler flags
+		if (CROSS_COMPILE_ARM)
+			set(CMAKE_CXX_FLAGS "--target=aarch64-linux-gnu ${CMAKE_CXX_FLAGS}")
+		endif()
 	endif()
 
 	# See https://github.com/jrouwe/JoltPhysics/issues/922. When compiling with DOUBLE_PRECISION=YES and CMAKE_OSX_DEPLOYMENT_TARGET=10.12 clang triggers a warning that we silence here.
 	if ("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin" AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -faligned-allocation")
-	endif()
-
-	# Cross compiler flags
-	if (CROSS_COMPILE_ARM)
-		set(CMAKE_CXX_FLAGS "--target=aarch64-linux-gnu ${CMAKE_CXX_FLAGS}")
 	endif()
 
 	# Set compiler flags for various configurations
@@ -206,11 +209,6 @@ else()
 	set(CMAKE_CXX_FLAGS_RELEASEASAN "-fsanitize=address")
 	set(CMAKE_CXX_FLAGS_RELEASEUBSAN "-fsanitize=undefined,implicit-conversion,float-divide-by-zero,local-bounds -fno-sanitize-recover=all")
 	set(CMAKE_CXX_FLAGS_RELEASECOVERAGE "-O0 -DJPH_NO_FORCE_INLINE -fprofile-instr-generate -fcoverage-mapping")
-
-	# Set linker flags
-	if (NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows"))
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
-	endif()
 endif()
 
 # Set linker flags
@@ -247,25 +245,27 @@ if (XCODE)
 endif()
 
 # Install Jolt library and includes
-install(TARGETS Jolt
-	EXPORT JoltExport
-	DESTINATION lib)
-foreach(SRC_FILE ${JOLT_PHYSICS_SRC_FILES})
-	string(REPLACE ${PHYSICS_REPO_ROOT} "" RELATIVE_SRC_FILE ${SRC_FILE})
-	get_filename_component(DESTINATION_PATH ${RELATIVE_SRC_FILE} DIRECTORY)
-	if (NOT RELATIVE_SRC_FILE MATCHES "\.cpp")
-		install(FILES ${SRC_FILE} DESTINATION include/${DESTINATION_PATH})
-	endif()
-endforeach()
+if (ENABLE_INSTALL)
+	install(TARGETS Jolt
+		EXPORT JoltExport
+		DESTINATION lib)
+	foreach(SRC_FILE ${JOLT_PHYSICS_SRC_FILES})
+		string(REPLACE ${PHYSICS_REPO_ROOT} "" RELATIVE_SRC_FILE ${SRC_FILE})
+		get_filename_component(DESTINATION_PATH ${RELATIVE_SRC_FILE} DIRECTORY)
+		if (NOT RELATIVE_SRC_FILE MATCHES "\.cpp")
+			install(FILES ${SRC_FILE} DESTINATION include/${DESTINATION_PATH})
+		endif()
+	endforeach()
 
-# Export Jolt library
-export(TARGETS Jolt
-	NAMESPACE Jolt::
-	FILE JoltConfig.cmake)
-install(EXPORT JoltExport
-	DESTINATION lib/cmake/Jolt/
-	NAMESPACE Jolt::
-	FILE JoltConfig.cmake)
+	# Export Jolt library
+	export(TARGETS Jolt
+		NAMESPACE Jolt::
+		FILE JoltConfig.cmake)
+	install(EXPORT JoltExport
+		DESTINATION lib/cmake/Jolt/
+		NAMESPACE Jolt::
+		FILE JoltConfig.cmake)
+endif()
 
 # Check if we're the root CMakeLists.txt, if not we are included by another CMake file and we should disable everything except for the main library
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -322,6 +322,12 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 			target_link_libraries(PerformanceTest LINK_PUBLIC Jolt)
 			if (MSVC)
 				target_link_options(PerformanceTest PUBLIC "/SUBSYSTEM:CONSOLE")
+			endif()
+			if (EMSCRIPTEN)
+				# Embed the assets for the RagdollScene
+				target_link_options(PerformanceTest PUBLIC "SHELL:--preload-file ${PHYSICS_REPO_ROOT}/Assets/Human.tof@/Assets/Human.tof")
+				target_link_options(PerformanceTest PUBLIC "SHELL:--preload-file ${PHYSICS_REPO_ROOT}/Assets/Human/dead_pose1.tof@/Assets/Human/dead_pose1.tof")
+				target_link_options(PerformanceTest PUBLIC "SHELL:--preload-file ${PHYSICS_REPO_ROOT}/Assets/terrain2.bof@/Assets/terrain2.bof")
 			endif()
 			set_property(TARGET PerformanceTest PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${PHYSICS_REPO_ROOT}")
 
