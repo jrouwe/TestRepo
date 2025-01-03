@@ -267,6 +267,8 @@ if (ENABLE_INSTALL)
 		FILE JoltConfig.cmake)
 endif()
 
+find_package(Vulkan REQUIRED)
+
 # Check if we're the root CMakeLists.txt, if not we are included by another CMake file and we should disable everything except for the main library
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	# Ability to turn ON/OFF individual applications
