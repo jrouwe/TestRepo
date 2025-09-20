@@ -32,6 +32,4 @@ jobs:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
     - name: Configure CMake
-      run: -ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" -Directory
-    - name: Build
-      run: msbuild Build\VS2022_CL_ARM_32_BIT\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
+      run: Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" -Directory
