@@ -391,7 +391,16 @@ if (JPH_USE_DX12)
 	# Use DXC compiler to compile shaders, when off falls back to FXC
 	if (JPH_USE_DXC)
 		target_compile_definitions(Jolt PUBLIC JPH_USE_DXC)
-		target_link_libraries(Jolt LINK_PUBLIC dxcompiler.lib)
+		
+		# Find the DXC compiler library
+		find_library(DXCOMPILER_LIB dxcompiler)
+		if (DXCOMPILER_LIB)
+			message(STATUS "Found dxcompiler at: ${DXCOMPILER_LIB}")
+			target_link_libraries(Jolt LINK_PUBLIC ${DXCOMPILER_LIB})
+		else()
+			message(WARNING "dxcompiler.lib not found, falling back to system library")
+			target_link_libraries(Jolt LINK_PUBLIC dxcompiler.lib)
+		endif()	
 	endif()
 endif()
 
