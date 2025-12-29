@@ -40,5 +40,6 @@ jobs:
       working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
       shell: cmd
       run: |
-        call "%VCINSTALLDIR%Auxiliary\Build\vcvarsall.bat" x64
-        UnitTests.exe
+        $vsPath = & vswhere -latest -property installationPath
+        & "$vsPath\VC\Auxiliary\Build\vcvarsall.bat" x64
+        .\UnitTests.exe
