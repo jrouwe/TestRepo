@@ -38,7 +38,8 @@ jobs:
       run: msbuild Build\VS2022_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
     - name: Test
       working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
+      shell: cmd
       run: |
-        $vsPath = & vswhere -latest -property installationPath
-        & "$vsPath\VC\Auxiliary\Build\vcvarsall.bat" x64
-        .\UnitTests.exe
+        for /f "delims=" %%i in ('vswhere -latest -property installationPath') do set VS_PATH=%%i
+        call "%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat" x64
+        UnitTests.exe
