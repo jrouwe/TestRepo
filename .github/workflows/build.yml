@@ -36,35 +36,9 @@ jobs:
       run: cmake -B ${{github.workspace}}/Build/VS2022_CL -G "Visual Studio 17 2022" -A x64 Build -DDOUBLE_PRECISION=${{matrix.double_precision}} -DJPH_USE_DX12=YES -DJPH_USE_DXC=YES
     - name: Build
       run: msbuild Build\VS2022_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
-    - name: Check Dependencies
+    - name: Test
       working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
-        dumpbin /DEPENDENTS UnitTests.exe
-    - name: Find dxcompiler.dll
-      shell: pwsh
-      run: |
-        Write-Host "Searching for dxcompiler.dll..."
-        Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10" -Filter "dxcompiler.dll" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName
-    - name: Add DXCompiler to PATH
-      shell: pwsh
-      run: |
-        $dxcPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
-        if (Test-Path $dxcPath) {
-          echo "$dxcPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Added $dxcPath to PATH"
-        } else {
-          Write-Host "DXC path not found, searching..."
-          $dxcDll = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "dxcompiler.dll" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($dxcDll) {
-            $dxcDir = Split-Path $dxcDll.FullName
-            echo "$dxcDir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-            Write-Host "Added $dxcDir to PATH"
-          } else {
-            Write-Host "ERROR: Could not find dxcompiler.dll"
-          }
-        }
-    - name: Test
-      working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
-      run: ./UnitTests.exe
+        UnitTests.exe
