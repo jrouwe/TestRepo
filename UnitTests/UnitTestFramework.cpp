@@ -180,6 +180,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine,
 // Generic entry point
 int main(int argc, char** argv)
 {
+	printf("Starting...\n");
+
 	// Show used instruction sets
 	std::cout << GetConfigurationString() << std::endl;
 

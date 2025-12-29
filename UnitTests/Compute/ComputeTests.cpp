@@ -26,6 +26,8 @@ TEST_SUITE("ComputeTests")
 {
 	static void RunTests(ComputeSystem *inComputeSystem)
 	{
+		Trace("RunTests");
+
 		inComputeSystem->mShaderLoader = [](const char *inName, Array<uint8> &outData) {
 		#if defined(JPH_PLATFORM_MACOS) || defined(JPH_PLATFORM_IOS)
 			// In macOS the shaders are copied to the bundle
@@ -184,6 +186,8 @@ TEST_SUITE("ComputeTests")
 #ifdef JPH_USE_DX12
 	TEST_CASE("TestComputeDX12")
 	{
+		Trace("TestComputeDX12");
+
 		Ref<ComputeSystem> compute_system = CreateComputeSystemDX12();
 		CHECK(compute_system != nullptr);
 		if (compute_system != nullptr)
@@ -204,6 +208,8 @@ TEST_SUITE("ComputeTests")
 #ifdef JPH_USE_VK
 	TEST_CASE("TestComputeVK")
 	{
+		Trace("TestComputeVK");
+
 		Ref<ComputeSystem> compute_system = CreateComputeSystemVK();
 		CHECK(compute_system != nullptr);
 		if (compute_system != nullptr)
