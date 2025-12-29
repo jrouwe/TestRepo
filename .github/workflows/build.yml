@@ -39,7 +39,9 @@ jobs:
     - name: Check Dependencies
       working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
       shell: cmd
-      run: dumpbin /DEPENDENTS UnitTests.exe
+      run: |
+        call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+        dumpbin /DEPENDENTS UnitTests.exe
     - name: Test
       working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
       run: ./UnitTests.exe
