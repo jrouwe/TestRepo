@@ -61,6 +61,7 @@ jobs:
         echo "DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "VK_ICD_FILENAMES=/usr/local/share/vulkan/icd.d/MoltenVK_icd.json" >> $GITHUB_ENV
         echo "VK_LAYER_PATH=/usr/local/share/vulkan/explicit_layer.d" >> $GITHUB_ENV
+        echo "VULKAN_SDK=${VULKAN_SDK_INSTALL}" >> $GITHUB_ENV
     - name: Configure CMake
       run: |
         source ${VULKAN_SDK_INSTALL}/setup-env.sh
@@ -68,5 +69,7 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/Build/MacOS_${{matrix.build_type}} -j $(nproc)
     - name: Test
-      working-directory: ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}
-      run: ctest --output-on-failure --verbose
+      run: |
+        source ${VULKAN_SDK_INSTALL}/setup-env.sh
+        cd ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}
+        ctest --output-on-failure --verbose
