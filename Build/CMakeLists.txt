@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-project(JoltPhysics CXX)
+project(JoltPhysics VERSION 5.5.1 LANGUAGES CXX)
 
 # When turning this option on, the library will be compiled using assertions. By default asserts are enabled in Debug build.
 option(USE_ASSERTS "Enable asserts" OFF)
@@ -11,14 +11,20 @@ option(DOUBLE_PRECISION "Use double precision math" OFF)
 # When turning this option on, the library will be compiled with debug symbols
 option(GENERATE_DEBUG_SYMBOLS "Generate debug symbols" ON)
 
+# Which type of debug symbols to generate, e.g. using source-map when compiling with emscripten makes compilation a lot faster
+set(JPH_DEBUG_SYMBOL_FORMAT "" CACHE STRING "Which type of debug symbols to generate")
+
 # When turning this option on, the library will override the default CMAKE_CXX_FLAGS_DEBUG/RELEASE values, otherwise they will use the platform defaults
 option(OVERRIDE_CXX_FLAGS "Override CMAKE_CXX_FLAGS_DEBUG/RELEASE" ON)
 
 # When turning this option on, the library will be compiled in such a way to attempt to keep the simulation deterministic across platforms
 option(CROSS_PLATFORM_DETERMINISTIC "Cross platform deterministic" OFF)
 
-# When turning this option on, the library will be compiled for ARM (aarch64-linux-gnu), requires compiling with clang
-option(CROSS_COMPILE_ARM "Cross compile to aarch64-linux-gnu" OFF)
+# When turning this option on, the library will be compiled for ARM using the CROSS_COMPILE_ARM_TARGET architecture, requires compiling with clang
+option(CROSS_COMPILE_ARM "Cross compile to the CROSS_COMPILE_ARM_TARGET architecture" OFF)
+
+# When cross compiling to ARM this specifies which target to use. Can be 'aarch64-linux-gnu' for 64-bit or 'arm-linux-gnueabihf' for 32-bit
+set(CROSS_COMPILE_ARM_TARGET "aarch64-linux-gnu" CACHE STRING "The target to use")
 
 # When turning this option on, Jolt will be compiled as a shared library and public symbols will be exported.
 option(BUILD_SHARED_LIBS "Compile Jolt as a shared library" OFF)
@@ -32,6 +38,14 @@ option(INTERPROCEDURAL_OPTIMIZATION "Enable interprocedural optimizations" ON)
 # and will enable floating point exceptions during simulation to detect divisions by zero.
 # Note that this currently only works using MSVC. Clang turns Float2 into a SIMD vector sometimes causing floating point exceptions (the option is ignored).
 option(FLOATING_POINT_EXCEPTIONS_ENABLED "Enable floating point exceptions" ON)
+
+# When turning this on, the library will be compiled with C++ exceptions enabled.
+# This adds some overhead and Jolt doesn't use exceptions so by default it is off.
+option(CPP_EXCEPTIONS_ENABLED "Enable C++ exceptions" OFF)
+
+# When turning this on, the library will be compiled with C++ RTTI enabled.
+# This adds some overhead and Jolt doesn't use RTTI so by default it is off.
+option(CPP_RTTI_ENABLED "Enable C++ RTTI" OFF)
 
 # Number of bits to use in ObjectLayer. Can be 16 or 32.
 option(OBJECT_LAYER_BITS "Number of bits in ObjectLayer" 16)
@@ -51,6 +65,10 @@ option(USE_FMADD "Enable FMADD" ON)
 # See: https://caniuse.com/?search=WebAssembly%20SIMD (Safari got support in March 2023 and was the last major browser to get support).
 option(USE_WASM_SIMD "Enable SIMD for WASM" OFF)
 
+# Enable 64 bit WASM instead of the default 32 bit WASM. Note that this currently requires special commandline flags in browsers and nodejs to enable.
+# E.g. use 'node --experimental-wasm-memory64 UnitTests.js' to run the unit tests in nodejs in 64 bit.
+option(JPH_USE_WASM64 "Enable 64 bit WASM" OFF)
+
 # Enable all warnings
 option(ENABLE_ALL_WARNINGS "Enable all warnings and warnings as errors" ON)
 
@@ -59,6 +77,9 @@ option(TRACK_BROADPHASE_STATS "Track Broadphase Stats" OFF)
 
 # Setting to periodically trace narrowphase stats to help determine which collision queries could be optimized
 option(TRACK_NARROWPHASE_STATS "Track Narrowphase Stats" OFF)
+
+# Setting to track simulation timings per body
+option(JPH_TRACK_SIMULATION_STATS "Track Simulation Stats" OFF)
 
 # Enable the debug renderer in the Debug and Release builds. Note that DEBUG_RENDERER_IN_DISTRIBUTION will override this setting.
 option(DEBUG_RENDERER_IN_DEBUG_AND_RELEASE "Enable debug renderer in Debug and Release builds" ON)
@@ -74,6 +95,11 @@ option(PROFILER_IN_DEBUG_AND_RELEASE "Enable the profiler in Debug and Release b
 # Note that enabling this reduces the performance of the library.
 option(PROFILER_IN_DISTRIBUTION "Enable the profiler in all builds" OFF)
 
+# Ability to use the external profiler using CMake config. Defines preprocessor JPH_EXTERNAL_PROFILE.
+# Use external profiler set using ProfileStartMeasurement and ProfileEndMeasurement to profile.
+# Option is available only when profiling is enabled using PROFILER_IN_DEBUG_AND_RELEASE or PROFILER_IN_DISTRIBUTION.
+option(JPH_USE_EXTERNAL_PROFILE "Use external profiler when profiling is enabled" OFF)
+
 # Setting this option will force the library to use malloc/free instead of allowing the user to override the memory allocator
 option(DISABLE_CUSTOM_ALLOCATOR "Disable support for a custom memory allocator" OFF)
 
@@ -84,7 +110,7 @@ option(USE_STD_VECTOR "Use std::vector instead of own Array class" OFF)
 option(ENABLE_OBJECT_STREAM "Compile the ObjectStream class and RTTI attribute information" ON)
 
 # Enable installation
-option(ENABLE_INSTALL "Generate installation target"  ON)
+option(ENABLE_INSTALL "Generate installation target" ON)
 
 include(CMakeDependentOption)
 
@@ -92,12 +118,24 @@ include(CMakeDependentOption)
 # Windows Store only supports the DLL version
 cmake_dependent_option(USE_STATIC_MSVC_RUNTIME_LIBRARY "Use the static MSVC runtime library" ON "MSVC;NOT WINDOWS_STORE" OFF)
 
+# Option to compile with DirectX 12 compute
+option(JPH_USE_DX12 "Use DirectX" ON)
+
+# Use DXC compiler to compile shaders, when off falls back to FXC
+option(JPH_USE_DXC "Use DXC shader compiler" ON)
+
+# Option to compile with Vulkan compute
+option(JPH_USE_VK "Use Vulkan" ON)
+
+# Option to compile with Metal compute
+option(JPH_USE_MTL "Use Metal" ON)
+
 # Determine which configurations exist
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) # Only do this when we're at the top level, see: https://gitlab.kitware.com/cmake/cmake/-/issues/24181
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Distribution")
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-		set(CMAKE_CONFIGURATION_TYPES "Debug;Release;ReleaseASAN;ReleaseUBSAN;ReleaseCoverage;Distribution")
+		set(CMAKE_CONFIGURATION_TYPES "Debug;Release;ReleaseASAN;ReleaseUBSAN;ReleaseTSAN;ReleaseCoverage;Distribution")
 	endif()
 endif()
 
@@ -126,14 +164,22 @@ if (MSVC)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi")
 	endif()
 
-	# Remove any existing compiler flag that enables RTTI
-	string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+	if (NOT CPP_RTTI_ENABLED)
+		# Set compiler flag for disabling RTTI
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
+	else()
+		# Set compiler flag for enabling RTTI
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR")
+	endif()
 
-	# Set compiler flag for disabling RTTI
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
+	if (NOT CPP_EXCEPTIONS_ENABLED)
+		# Remove any existing compiler flag that enables exceptions
+		string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
-	if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM")
-		# On ARM the exception handling flag is missing which causes warnings
+		# Disable warning about STL and compiler-generated types using noexcept when exceptions are disabled
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4577")
+	else()
+		# Enable exceptions
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 	endif()
 
@@ -145,6 +191,7 @@ if (MSVC)
 	set(CMAKE_CXX_FLAGS_DISTRIBUTION "${CMAKE_CXX_FLAGS_RELEASE}")
 	set(CMAKE_CXX_FLAGS_RELEASEASAN "-fsanitize=address /Od")
 	set(CMAKE_CXX_FLAGS_RELEASEUBSAN "-fsanitize=undefined,implicit-conversion,float-divide-by-zero,local-bounds -fno-sanitize-recover=all")
+	set(CMAKE_CXX_FLAGS_RELEASETSAN "${CMAKE_CXX_FLAGS_RELEASE} -fsanitize=thread")
 	set(CMAKE_CXX_FLAGS_RELEASECOVERAGE "-fprofile-instr-generate -fcoverage-mapping")
 
 	# Set linker flags
@@ -163,6 +210,7 @@ if (MSVC)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Qunused-arguments") # Clang emits warnings about unused arguments such as /MP and /GL
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASEASAN "/SUBSYSTEM:CONSOLE /LIBPATH:${CLANG_LIB_PATH} clang_rt.asan-x86_64.lib -wholearchive:clang_rt.asan-x86_64.lib clang_rt.asan_cxx-x86_64.lib -wholearchive:clang_rt.asan_cxx-x86_64.lib")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASEUBSAN "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LIBPATH:${CLANG_LIB_PATH}")
+		set(CMAKE_EXE_LINKER_FLAGS_RELEASETSAN "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LIBPATH:${CLANG_LIB_PATH}")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASECOVERAGE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LIBPATH:${CLANG_LIB_PATH}")
 	endif()
 else()
@@ -173,25 +221,48 @@ else()
 
 	# Optionally generate debug symbols
 	if (GENERATE_DEBUG_SYMBOLS)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g${JPH_DEBUG_SYMBOL_FORMAT}")
+	endif()
+
+	if (NOT CPP_RTTI_ENABLED)
+		# Set compiler flag for disabling RTTI
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+	else()
+		# Set compiler flag for enabling RTTI
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
+	endif()
+
+	if (NOT CPP_EXCEPTIONS_ENABLED)
+		# Set compiler flag for disabling exception-handling
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+	else()
+		# Set compiler flag for enabling exception-handling
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
 	endif()
 
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		# Also disable -Wstringop-overflow or it will generate false positives that can't be disabled from code when link-time optimizations are enabled
+		# Also disable -Wno-psabi to avoid messages of the form note: parameter passing for argument of type '...' changed in GCC 7.1
 		# Also turn off automatic fused multiply add contractions, there doesn't seem to be a way to do this selectively through the macro JPH_PRECISE_MATH_OFF
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow -ffp-contract=off")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow -Wno-psabi -ffp-contract=off")
 	else()
 		# Do not use -ffast-math since it cannot be turned off in a single compilation unit under clang, see Core.h
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-model=precise")
 
 		# On clang 14 and later we can turn off float contraction through a pragma, older versions and deterministic versions need it off always, see Core.h
-		if (CMAKE_CXX_COMPILER_VERSION LESS 14 OR CROSS_PLATFORM_DETERMINISTIC)
+		# clang on LoongArch does not support such pragma, also turn off contraction for it.
+		if (CMAKE_CXX_COMPILER_VERSION LESS 14 OR CROSS_PLATFORM_DETERMINISTIC OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "loongarch")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
+
+			# Clang 20 and later complain with: overriding '-ffp-model=precise' option with '-ffp-contract=off' [-Woverriding-option], but this is exactly what we want.
+			if (CMAKE_CXX_COMPILER_VERSION GREATER 19)
+				set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overriding-option")
+			endif()
 		endif()
 
 		# Cross compiler flags
-		if (CROSS_COMPILE_ARM)
-			set(CMAKE_CXX_FLAGS "--target=aarch64-linux-gnu ${CMAKE_CXX_FLAGS}")
+		if (CROSS_COMPILE_ARM AND NOT ("${CROSS_COMPILE_ARM_TARGET}" STREQUAL ""))
+			set(CMAKE_CXX_FLAGS "--target=${CROSS_COMPILE_ARM_TARGET} ${CMAKE_CXX_FLAGS}")
 		endif()
 	endif()
 
@@ -208,6 +279,7 @@ else()
 	set(CMAKE_CXX_FLAGS_DISTRIBUTION "${CMAKE_CXX_FLAGS_RELEASE}")
 	set(CMAKE_CXX_FLAGS_RELEASEASAN "-fsanitize=address")
 	set(CMAKE_CXX_FLAGS_RELEASEUBSAN "-fsanitize=undefined,implicit-conversion,float-divide-by-zero,local-bounds -fno-sanitize-recover=all")
+	set(CMAKE_CXX_FLAGS_RELEASETSAN "${CMAKE_CXX_FLAGS_RELEASE} -fsanitize=thread")
 	set(CMAKE_CXX_FLAGS_RELEASECOVERAGE "-O0 -DJPH_NO_FORCE_INLINE -fprofile-instr-generate -fcoverage-mapping")
 endif()
 
@@ -220,11 +292,17 @@ function(SET_INTERPROCEDURAL_OPTIMIZATION)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DISTRIBUTION OFF PARENT_SCOPE)
 
 	# On ARM, whole program optimization triggers an internal compiler error during code gen, so we don't turn it on
-	if (INTERPROCEDURAL_OPTIMIZATION AND NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64") AND NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM"))
+	# When compiling as a shared lib with MinGW, turning on LTO causes errors of the form 'ld.exe: cannot export symbol X wrong type (4 vs 3)'
+	if (INTERPROCEDURAL_OPTIMIZATION
+		AND NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
+		AND NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM")
+		AND (NOT CROSS_COMPILE_ARM OR ("${CROSS_COMPILE_ARM_TARGET}" STREQUAL "aarch64-linux-gnu"))
+		AND NOT (MINGW AND BUILD_SHARED_LIBS))
 		include(CheckIPOSupported)
 		check_ipo_supported(RESULT IS_IPO_SUPPORTED OUTPUT IPO_CHECK_OUTPUT)
 
 		if (IS_IPO_SUPPORTED)
+			message("Interprocedural optimizations are turned on")
 			set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON PARENT_SCOPE)
 			set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DISTRIBUTION ON PARENT_SCOPE)
 		else()
@@ -239,5 +317,99 @@ set(PHYSICS_REPO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../)
 
 # Make Jolt Library
 include(${PHYSICS_REPO_ROOT}/Jolt/Jolt.cmake)
+if (XCODE)
+	# Ensure that we enable SSE4.2 for the x86_64 build, XCode builds multiple architectures
+	set_property(TARGET Jolt PROPERTY XCODE_ATTRIBUTE_OTHER_CPLUSPLUSFLAGS[arch=x86_64] "$(inherited) -msse4.2 -mpopcnt")
+endif()
 
-find_package(Vulkan REQUIRED)
+# Install Jolt library and includes
+if (ENABLE_INSTALL)
+	include(GNUInstallDirs)
+	install(TARGETS Jolt
+		EXPORT JoltExport
+		INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	foreach(SRC_FILE ${JOLT_PHYSICS_SRC_FILES})
+		string(REPLACE ${PHYSICS_REPO_ROOT} "" RELATIVE_SRC_FILE ${SRC_FILE})
+		get_filename_component(DESTINATION_PATH ${RELATIVE_SRC_FILE} DIRECTORY)
+		if (NOT RELATIVE_SRC_FILE MATCHES "\.cpp")
+			cmake_path(SET DST_FILE NORMALIZE "${CMAKE_INSTALL_INCLUDEDIR}/${DESTINATION_PATH}")
+			install(FILES ${SRC_FILE} DESTINATION ${DST_FILE})
+		endif()
+	endforeach()
+
+	# Export Jolt library
+	export(TARGETS Jolt
+		NAMESPACE Jolt::
+		FILE JoltConfig.cmake)
+	install(EXPORT JoltExport
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Jolt/
+		NAMESPACE Jolt::
+		FILE JoltConfig.cmake)
+endif()
+
+# Check if we're the root CMakeLists.txt, if not we are included by another CMake file and we should disable everything except for the main library
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+	# Ability to turn ON/OFF individual applications
+	option(TARGET_UNIT_TESTS "Build Unit Tests" ON)
+	option(TARGET_HELLO_WORLD "Build Hello World" ON)
+	option(TARGET_PERFORMANCE_TEST "Build Performance Test" ON)
+	option(TARGET_SAMPLES "Build Samples" ON)
+	option(TARGET_VIEWER "Build JoltViewer" ON)
+
+	if (TARGET_UNIT_TESTS)
+		# Create UnitTests executable
+		include(${PHYSICS_REPO_ROOT}/UnitTests/UnitTests.cmake)
+
+		if (APPLE)
+			# Icon
+			set(JPH_ICON "${CMAKE_CURRENT_SOURCE_DIR}/macOS/icon.icns")
+			set_source_files_properties(${JPH_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+			# macOS configuration
+			add_executable(UnitTests MACOSX_BUNDLE ${UNIT_TESTS_SRC_FILES} ${UNIT_TESTS_ASSETS} ${JPH_ICON})
+
+			# Make sure that all unit test assets move to the Resources folder in the package
+			foreach(ASSET_FILE ${UNIT_TESTS_ASSETS})
+				string(REPLACE ${PHYSICS_REPO_ROOT} "Resources" ASSET_DST ${ASSET_FILE})
+				get_filename_component(ASSET_DST ${ASSET_DST} DIRECTORY)
+				set_source_files_properties(${ASSET_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION ${ASSET_DST})
+			endforeach()
+
+			set_property(TARGET UnitTests PROPERTY MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/iOS/UnitTestsInfo.plist")
+			set_property(TARGET UnitTests PROPERTY XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.joltphysics.unittests")
+			set_property(TARGET UnitTests PROPERTY BUILD_RPATH "/usr/local/lib" INSTALL_RPATH "/usr/local/lib") # to find the Vulkan shared lib
+
+			# Ensure that we enable SSE4.2 for the x86_64 build, XCode builds multiple architectures
+			set_property(TARGET UnitTests PROPERTY XCODE_ATTRIBUTE_OTHER_CPLUSPLUSFLAGS[arch=x86_64] "$(inherited) -msse4.2 -mpopcnt")
+		else()
+			add_executable(UnitTests ${UNIT_TESTS_SRC_FILES})
+		endif()
+		target_include_directories(UnitTests PUBLIC ${UNIT_TESTS_ROOT})
+		target_link_libraries(UnitTests LINK_PUBLIC Jolt)
+
+		if (EMSCRIPTEN)
+			target_link_options(UnitTests PUBLIC -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=134217728)
+		endif()
+
+		# Code coverage doesn't work when using precompiled headers
+		if (CMAKE_GENERATOR STREQUAL "Ninja Multi-Config" AND MSVC)
+			# The Ninja Multi-Config generator errors out when selectively disabling precompiled headers for certain configurations.
+			# See: https://github.com/jrouwe/JoltPhysics/issues/1211
+			target_precompile_headers(UnitTests PRIVATE "${JOLT_PHYSICS_ROOT}/Jolt.h")
+		else()
+			target_precompile_headers(UnitTests PRIVATE "$<$<NOT:$<CONFIG:ReleaseCoverage>>:${JOLT_PHYSICS_ROOT}/Jolt.h>")
+		endif()
+
+		if (MSVC)
+			target_link_options(UnitTests PUBLIC "/SUBSYSTEM:CONSOLE")
+		endif()
+
+		# Register unit tests as a test so that it can be run with:
+		# ctest --output-on-failure
+		enable_testing()
+		add_test(UnitTests UnitTests)
+	endif()
+endif()
