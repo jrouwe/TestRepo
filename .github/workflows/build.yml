@@ -56,7 +56,11 @@ jobs:
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/macos_install_vulkan_sdk.sh ${VULKAN_SDK_INSTALL}
     - name: Install Molten VK
-      run: brew install vulkan-loader molten-vk
+      run: |
+        brew install vulkan-loader molten-vk
+        echo "DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "VK_ICD_FILENAMES=/usr/local/share/vulkan/icd.d/MoltenVK_icd.json" >> $GITHUB_ENV
+        echo "VK_LAYER_PATH=/usr/local/share/vulkan/explicit_layer.d" >> $GITHUB_ENV
     - name: Configure CMake
       run: |
         source ${VULKAN_SDK_INSTALL}/setup-env.sh
