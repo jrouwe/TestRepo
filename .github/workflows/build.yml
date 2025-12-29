@@ -53,10 +53,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v6
-    - name: Install Vulkan SDK
-      run: |
-        ${{github.workspace}}/Build/macos_install_vulkan_sdk.sh ${VULKAN_SDK_INSTALL}
-        echo "VULKAN_SDK=${VULKAN_SDK_INSTALL}" >> $GITHUB_ENV
+    - name: Install Vulkan
+      run: ${{github.workspace}}/Build/macos_install_vulkan_sdk.sh ${VULKAN_SDK_INSTALL}
     - name: Configure CMake
       run: |
         source ${VULKAN_SDK_INSTALL}/setup-env.sh
@@ -64,7 +62,7 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/Build/MacOS_${{matrix.build_type}} -j $(nproc)
     - name: Test
+      working-directory: ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}
       run: |
         source ${VULKAN_SDK_INSTALL}/setup-env.sh
-        cd ${{github.workspace}}/Build/MacOS_${{matrix.build_type}}
         ctest --output-on-failure --verbose
