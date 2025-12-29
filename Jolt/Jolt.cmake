@@ -391,16 +391,36 @@ if (JPH_USE_DX12)
 	# Use DXC compiler to compile shaders, when off falls back to FXC
 	if (JPH_USE_DXC)
 		target_compile_definitions(Jolt PUBLIC JPH_USE_DXC)
-		
-		# Find the DXC compiler library
-		find_library(DXCOMPILER_LIB dxcompiler)
-		if (DXCOMPILER_LIB)
-			message(STATUS "Found dxcompiler at: ${DXCOMPILER_LIB}")
-			target_link_libraries(Jolt LINK_PUBLIC ${DXCOMPILER_LIB})
+	
+		# On Windows, explicitly find the Windows SDK dxcompiler.lib
+		if (WIN32 AND MSVC)
+			# Find the latest Windows SDK
+			get_filename_component(WINDOWS_KITS_DIR "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Kits\\Installed Roots;KitsRoot10]" ABSOLUTE)
+			MESSAGE(${WINDOWS_KITS_DIR})
+			
+			if (EXISTS "${WINDOWS_KITS_DIR}")
+				file(GLOB WINDOWS_SDK_VERSIONS "${WINDOWS_KITS_DIR}/Lib/*")
+				list(SORT WINDOWS_SDK_VERSIONS)
+				list(REVERSE WINDOWS_SDK_VERSIONS) # Get the latest version
+				
+				foreach(SDK_VERSION ${WINDOWS_SDK_VERSIONS})
+					set(DXCOMPILER_PATH "${SDK_VERSION}/um/${CMAKE_VS_PLATFORM_NAME}/dxcompiler.lib")
+					if (EXISTS "${DXCOMPILER_PATH}")
+						message(STATUS "Using Windows SDK dxcompiler.lib from: ${DXCOMPILER_PATH}")
+						target_link_libraries(Jolt LINK_PUBLIC "${DXCOMPILER_PATH}")
+						set(FOUND_DXCOMPILER TRUE)
+						break()
+					endif()
+				endforeach()
+			endif()
+			
+			if (NOT FOUND_DXCOMPILER)
+				message(WARNING "Could not find Windows SDK dxcompiler.lib, using system library")
+				target_link_libraries(Jolt LINK_PUBLIC dxcompiler.lib)
+			endif()
 		else()
-			message(WARNING "dxcompiler.lib not found, falling back to system library")
 			target_link_libraries(Jolt LINK_PUBLIC dxcompiler.lib)
-		endif()	
+		endif()
 	endif()
 endif()
 
