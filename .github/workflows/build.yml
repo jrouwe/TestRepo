@@ -55,6 +55,8 @@ jobs:
       uses: actions/checkout@v6
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/macos_install_vulkan_sdk.sh ${VULKAN_SDK_INSTALL}
+    - name: Install Molten VK
+      run: brew install vulkan-loader molten-vk
     - name: Configure CMake
       run: |
         source ${VULKAN_SDK_INSTALL}/setup-env.sh
